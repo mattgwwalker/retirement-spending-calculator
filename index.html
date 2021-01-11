@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1"
+      crossorigin="anonymous">
+    
+    <title>Retirement Spending Calculator</title>
+
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Retirement Spending Calculator</h1>
+      
+      <p>This calculator uses a life-expectency based approach to
+        produce a long term budget for spending retirement savings.</p>
+
+      <p>It is specifically for New Zealanders born between 1876 and
+      2016 and can calculate up to 95 years of age.</p>
+
+      <p>All values are in "today's dollars", thus it is important
+      that the assumed interest rate is after inflation.  It is also
+      important the interest rate is after taxes and fees.</p>
+
+      <p>Superannuation is assumed to be adjusted for inflation and
+      thus stays constant in "today's dollars".</p>
+      
+      <form name="details">
+        <fieldset class="row mb-3">
+          <legend class="col-form-label col-sm-2 pt-0">Sex</legend>
+
+          <div class="col-sm-10">
+            <div class="form-check">
+              <input type="radio" class="btn-check" name="sex" id="male" value="male" checked>
+              <label class="btn btn-secondary" for="male">Male</label>
+
+              <input type="radio" class="btn-check" name="sex" id="female" value="female">
+              <label class="btn btn-secondary" for="female">Female</label>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="form-group row">
+          <label for="dob" class="col-sm-2 col-form-label">Date of Birth:</label>
+          <div class="col-sm-10">
+            <input type="date" id="dob" name="dob" min="1876-01-01" max="2016-01-01">
+          </div>
+        </div>
+      
+        <fieldset class="row mb-3">
+          <legend class="col-form-label col-sm-2 pt-0">Longevity</legend>
+
+          <div class="col-sm-10">
+            <div class="form-check">
+              <input type="radio" class="btn-check" name="longevity" id="median" value="median" checked>
+              <label class="btn btn-secondary" for="median">Median Longevity</label>
+
+              <input type="radio" class="btn-check" name="longevity" id="high-longevity" value="high-longevity">
+              <label class="btn btn-secondary" for="high-longevity">Long-Life (Conservative)</label>
+            </div>
+          </div>
+        </fieldset>
+
+        
+        <div class="form-group row">
+          <label for="retirementDate" class="col-sm-2 col-form-label">Retirement Date:</label>
+          <div class="col-sm-10">
+            <input type="date" id="retirementDate" name="retirementDate" min="1876-01-01">
+            <button type="button" class="btn btn-outline-secondary" id="retirementDateToday">Today</button>
+          </div>
+        </div>
+      
+
+        <div class="form-group row">
+          <label for="startingAmount" class="col-sm-2 col-form-label">Starting Amount:</label>
+          <div class="col-sm-10">
+            <div class="input-group mb-3">
+              <span class="input-group-text">$</span>
+              <input type="text" class="form-control" id="startingAmount" name="startingAmount">
+            </div>
+          </div>
+        </div>
+
+        
+        <div class="form-group row">
+          <label for="superannuation" class="col-sm-2 col-form-label">Superannuation (per year):</label>
+          <div class="col-sm-10">
+            <div class="input-group mb-3">
+              <span class="input-group-text">$</span>
+              <input type="text" class="form-control" id="superannuation" name="superannuation">
+            </div>
+          </div>
+        </div>
+
+        
+        <div class="form-group row">
+          <label for="interest" class="col-sm-2 col-form-label">
+            Interest (after fees, taxes and inflation):
+          </label>
+          <div class="col-sm-10">
+            <div class="input-group mb-3">
+              <input type="text" class="form-control" id="interest" name="interest">
+              <span class="input-group-text">% p.a.</span>
+            </div>
+          </div>
+        </div>
+
+        
+        <div class="form-group row">
+          <div class="col-sm-10">
+            <button class="btn btn-primary" id="calcRetirementSpendingPlan">Calculate Retirement Spending Plan</button>
+          </div>
+        </div>
+        
+      </form>
+    </div> <!-- /container -->
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
+      crossorigin="anonymous">
+    </script>
+
+    <script src="papaparse.min.js"></script>
+    
+    <script>
+      RSC = {}; // namespace for Retirement Spending Calculator
+      RSC.data = {}; // dictionary for life expectancy tables
+
+      let onCsvFilesParsed = function() {
+          
+      }
+      
+      // Load the life expectancy tables
+      let csvFilesToParse = 4
+      let csvFilesParsed = 0
+      let onCsvParseComplete = function(results, file) {
+          console.log("Parsing complete:", results, file);
+
+          RSC.data[file] = results.data
+          csvFilesParsed += 1
+          if (csvFilesParsed == csvFilesToParse) {
+              onCsvFilesParsed();
+          }
+      }
+
+      Papa.parse(
+          "male-median.csv",
+          {
+              download: true,
+              header: true,
+              complete: onCsvParseComplete
+          }
+      )
+      Papa.parse(
+          "male-high-longevity.csv",
+          {
+              download: true,
+              header: true,
+              complete: onCsvParseComplete
+          }
+      )
+      Papa.parse(
+          "female-median.csv",
+          {
+              download: true,
+              header: true,
+              complete: onCsvParseComplete
+          }
+      )
+      Papa.parse(
+          "female-high-longevity.csv",
+          {
+              download: true,
+              header: true,
+              complete: onCsvParseComplete
+          }
+      )
+
+      let lookupLifeExpectancy = function(sex, longevity, yearOfBirth, age) {
+          // Sanity check parameters
+          if (sex != "male" && sex != "female") {
+              throw "Sex must be either 'male' or 'female'";
+          }
+          if (longevity != "median" && longevity != "high-longevity") {
+              throw "Longevity must be either 'median' or 'high-longevity'";
+          }
+          if (isNaN(yearOfBirth)) {
+              throw "Year of birth must be a year between 1876 and 2016";
+          }
+          if (yearOfBirth < 1876) {
+              throw "Year of birth must be no earlier than 1876";
+          }
+          if (yearOfBirth > 2016) {
+              throw "Year of birth must be no later than 2016";
+          }
+          if (isNaN(age)) {
+              throw "Age must be a number between 0 and 95 (inclusive)";
+          }
+          if (age < 0) {
+              throw "Age must be positive";
+          }
+          if (age > 95) {
+              throw "Age must be no greater than 95";
+          }
+          
+          // Get appropriate CSV filename
+          filename = sex + "-" + longevity + ".csv";
+          console.log("filename:", filename);
+          
+          // Get life-expectancy for floored years
+          let initialYear = RSC.data[filename][0].year;
+          console.log("initialYear:", initialYear);
+          console.log("yearOfBirth:", yearOfBirth);
+          let index = yearOfBirth - initialYear;
+          console.log("index:", index);
+          let row = RSC.data[filename][index];
+          console.assert(row !== undefined, "Row is undefined");
+          console.assert(row.year == yearOfBirth, "Error detected with row lookup for life expectancy");
+
+          if (age < 0) return null;
+          if (age > 95) return null;
+
+          return RSC.data[filename][index][parseInt(age)];
+      }
+          
+      /*
+      document.getElementById("calc-life-expectancy").onclick= function() {
+          console.log("Calculating life expectancy");
+
+          let sex = document.forms.details.sex.value;
+          console.log("Sex:", sex);
+
+          let longevity = document.forms.details.longevity.value;
+          console.log("Longevity:", longevity);
+
+          let dob = document.forms.details.dob.value;
+          dob = new Date(document.forms.details.dob.valueAsNumber);
+          console.log("DOB:", dob);
+
+          // Get year of birth
+          yearOfBirth = dob.getFullYear();
+
+          // Calculate current age (in 365-day years)
+          let now = new Date();
+          let delta = now-dob;
+          let years = delta / 1000 / 60 / 60 / 24 / 365;
+          console.log("years:", years);
+
+          // Lookup life expectancy for floored years
+          let flooredYears = Math.floor(years);
+          let flooredExpected = lookupLifeExpectancy(sex, longevity, yearOfBirth, flooredYears);
+          console.log("flooredExpected:",flooredExpected);
+
+          // Lookup life expectancy for ceiling years
+          let ceilYears = Math.ceil(years);
+          let ceilExpected = lookupLifeExpectancy(sex, longevity, yearOfBirth, ceilYears);
+          console.log("ceilExpected:", ceilExpected);
+
+          // Calculate weighted average
+          let weight = years - flooredYears;
+          console.assert(weight >= 0, "Expected weight to be non-negative");
+          console.assert(weight <= 1, "Expected weight to be below one");
+          console.log("weight:", weight);
+
+          let avgExpected = (1-weight)*flooredExpected + weight*ceilExpected;
+          console.log("avgExpected:", avgExpected);
+          
+          return false;
+      }
+*/
+
+      document.getElementById("retirementDateToday").onclick= function() {
+          console.log("Setting retirement date");
+          let retirementDate = document.forms.details.elements.retirementDate.valueAsDate = new Date();
+      }
+
+      let getValuesFromForm = function() {
+          let sex = document.forms.details.sex.value;
+          console.log("Sex:", sex);
+
+          let longevity = document.forms.details.longevity.value;
+          console.log("Longevity:", longevity);
+
+          let dob = document.forms.details.dob.value;
+          dob = new Date(document.forms.details.dob.valueAsNumber);
+          console.log("DOB:", dob);
+
+          let retirementDate = document.forms.details.retirementDate.value;
+          retirementDate = new Date(document.forms.details.retirementDate.valueAsNumber);
+          console.log("retirementDate:", retirementDate);
+
+          let startingAmount = parseFloat(document.forms.details.startingAmount.value);
+          console.log("startingAmount:", startingAmount);
+
+          let superannuation = parseFloat(document.forms.details.superannuation.value);
+          console.log("superannuation:", superannuation);
+
+          let interest = parseFloat(document.forms.details.interest.value);
+          console.log("interest:", interest);
+
+          return {
+              sex: sex,
+              dob: dob,
+              longevity: longevity,
+              retirementDate: retirementDate,
+              startingAmount: startingAmount,
+              superannuation: superannuation,
+              interest: interest
+          };
+      }
+
+      // Return the age as number of years and number of days 
+      let calcAge = function(date, dob) {
+          // Check that date is after dob
+          if (dob > date) {
+              throw "Date occurs before date-of-birth";
+          }
+          
+          // Calculate number of years and days between the two dates.
+          let years = date.getFullYear() - dob.getFullYear() -1
+          let days = 0
+          if (date.getMonth() >= dob.getMonth()
+              && date.getDate() >= dob.getDate()) {
+              years += 1;
+              days = (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+                      - Date.UTC(date.getFullYear(), dob.getMonth(), dob.getDate())) / 24 / 60 / 60 / 1000;
+          } else {
+              days = (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+                      - Date.UTC(date.getFullYear()-1, dob.getMonth(), dob.getDate())) / 24 / 60 / 60 / 1000;
+          }
+
+          return {
+              years: years,
+              days: days,
+          };
+      };
+      
+      document.getElementById("calcRetirementSpendingPlan").onclick= function() {
+          values = getValuesFromForm();
+          console.log("values:", values);
+
+          let plan = [];
+          RSC.plan = plan;
+
+          let row = {};
+
+          // Date
+          row.date = values.retirementDate;
+          let now = new Date();
+
+          // Age
+          let age = calcAge(now, values.dob);
+          row.age = age.years + " years";
+          if (age.days != 0) { row.age += " " + age.days + " days"; }
+
+          // Life Expectancy
+          row.lifeExpectancy = lookupLifeExpectancy(
+              values.sex,
+              values.longevity,
+              values.dob.getFullYear(),
+              age.years + age.days/365
+          )
+
+          plan.push(row);
+
+          console.log("RSC.plan:", RSC.plan);
+          
+          return false;
+      }
+
+    </script>
+  </body>
+</html>
