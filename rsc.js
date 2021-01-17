@@ -111,37 +111,22 @@ let calcLifeExpectancy = function(sex, longevity, dob, age) {
 }
 
 document.getElementById("retirementDateToday").onclick= function() {
-    console.log("Setting retirement date");
     let retirementDate = document.forms.details.elements.retirementDate.valueAsDate = new Date();
 }
 
+// Get the values from the form's fields
 let getValuesFromForm = function() {
     let sex = document.forms.details.sex.value;
-    console.log("Sex:", sex);
-
     let longevity = document.forms.details.longevity.value;
-    console.log("Longevity:", longevity);
-
     let additionalLongevity = document.forms.details.additionalLongevity.valueAsNumber;
-    console.log("Additional longevity:", additionalLongevity);
-
     let dob = document.forms.details.dob.value;
     dob = new Date(document.forms.details.dob.valueAsNumber);
-    console.log("DOB:", dob);
-
     let retirementDate = document.forms.details.retirementDate.value;
     retirementDate = new Date(document.forms.details.retirementDate.valueAsNumber);
-    console.log("retirementDate:", retirementDate);
-
     let startingAmount = parseFloat(document.forms.details.startingAmount.value);
-    console.log("startingAmount:", startingAmount);
-
     let superannuation = parseFloat(document.forms.details.superannuation.value);
-    console.log("superannuation:", superannuation);
-
     let interestRate = parseFloat(document.forms.details.interestRate.value) / 100;
-    console.log("interestRate:", interestRate);
-
+    
     return {
         sex: sex,
         dob: dob,
@@ -195,7 +180,7 @@ let getDateString = function(date) {
             +date.getDate().toString().padStart(2,"0"));
 }
 
-document.getElementById("calcRetirementSpendingPlan").onclick= function() {
+document.getElementById("calcRetirementSpendingPlan").onclick = function() {
     values = getValuesFromForm();
     console.log("values:", values);
 
@@ -207,8 +192,9 @@ document.getElementById("calcRetirementSpendingPlan").onclick= function() {
         }
         return undefined;
     }
-    let nextBudgetUpdateDate = values.retirementDate;
+    let nextBudgetUpdateDate = new Date(values.retirementDate);
     let spendPerDay = undefined;
+    let drawDownPerDay = undefined;
     let interestRatePerDay = (1+values.interestRate)**(1/365)-1
 
     let drawdown = undefined;
@@ -218,7 +204,7 @@ document.getElementById("calcRetirementSpendingPlan").onclick= function() {
     RSC.plan = plan;
 
     // Date
-    let date = values.retirementDate;
+    let date = new Date(values.retirementDate);
     let maxDate = new Date(values.dob.getFullYear()+95,
                            values.dob.getMonth(),
                            values.dob.getDate());
@@ -227,7 +213,7 @@ document.getElementById("calcRetirementSpendingPlan").onclick= function() {
     let row = null;
     while (date <= maxDate) {
         // Calculate budget update if required
-        if (date == nextBudgetUpdateDate) {
+        if (date >= nextBudgetUpdateDate) {
             // If there's a current row, finish it off before
             // moving on to a new budget
             if (row !== null) {
@@ -259,7 +245,7 @@ document.getElementById("calcRetirementSpendingPlan").onclick= function() {
             // Calculate budget
             const daysPerYear = 365.25;
             let daysRemaining = (yearsRemaining+values.additionalLongevity)*daysPerYear;
-            let drawDownPerDay = assets / daysRemaining;
+            drawDownPerDay = assets / daysRemaining;
             let superannuationPerDay = values.superannuation / daysPerYear;
             spendPerDay = drawDownPerDay + superannuationPerDay;
             
@@ -272,6 +258,7 @@ document.getElementById("calcRetirementSpendingPlan").onclick= function() {
                 yearsRemaining: yearsRemaining,
                 startingAssets: assets,
                 spendPerDay: spendPerDay,
+                spendPerWeek: spendPerDay*7
             };
 
             // Reset values for this budget
@@ -280,14 +267,12 @@ document.getElementById("calcRetirementSpendingPlan").onclick= function() {
 
             // Set date for next budget update
             nextBudgetUpdateDate = getNextBudgetUpdateDate(nextBudgetUpdateDate, "annual");
-            console.log("date:", date);
-            console.log("nextBudgetUpdateDate:",nextBudgetUpdateDate);
         }
 
         // Drawdown
-        drawdown += spendPerDay;
+        drawdown += drawDownPerDay;
         if (assets - drawdown < 0) break;
-        assets -= spendPerDay;
+        assets -= drawDownPerDay;
         
         // Interest
         let interestToday = assets * interestRatePerDay;
@@ -306,6 +291,54 @@ document.getElementById("calcRetirementSpendingPlan").onclick= function() {
 
     console.log("RSC.plan:", RSC.plan);
 
+    // Remove previous results
+    let resultsDiv = document.getElementById("results");
+    resultsDiv.textContent = "";
+
+    // Add results
+    let table = document.createElement("table");
+    table.setAttribute("class","table");
+    resultsDiv.appendChild(table);
+    let tableHeader = document.createElement("thead");
+    table.appendChild(tableHeader);
+    let tableHeaderRow = document.createElement("tr");
+    tableHeader.appendChild(tableHeaderRow);
+    let colNames = ["Date",
+                    "Age",
+                    "Life Expectancy",
+                    "Years Remaining",
+                    "Starting Assets ($)",
+                    "Spend per Week",
+                    "Draw Down",
+                    "Interest"];
+    colNames.forEach(colName => {
+        let col = document.createElement("th");
+        col.textContent = colName;
+        tableHeaderRow.appendChild(col);
+    });
+    let tableBody = document.createElement("tbody");
+    table.appendChild(tableBody);
+    RSC.plan.forEach(row => {
+        let tableBodyRow = document.createElement("tr");
+        tableBody.appendChild(tableBodyRow);
+        let colIds = ["date",
+                      "ageValue",
+                      "lifeExpectancy",
+                      "yearsRemaining",
+                      "startingAssets",
+                      "spendPerWeek",
+                      "drawdown",
+                      "interest"];
+        let dps = [null,1,1,1,0,0,0,0];
+        colIds.forEach((colId,index) => {
+            let cell = document.createElement("td");
+            let value = row[colId];
+            if (typeof(value)=="number") { value = value.toFixed(dps[index]); }
+            cell.textContent = value;
+            tableBodyRow.appendChild(cell);
+        });
+        
+    });
     
     // Remove the old QR code if there is one
     document.getElementById("qr-code").textContent = "";

@@ -1,0 +1,36 @@
+@media print {
+    p {
+    }
+
+    @page {
+        size: A4;
+        margin: 1.5cm;
+    }
+
+    html, body {
+    }
+    
+    body {
+        margin: 0cm;
+        padding: 0cm;
+        font-size: 10pt;
+    }
+
+    .container {
+        margin: 0cm;
+        padding: 0cm;
+        max-width: none;
+    }
+
+    .btn-secondary {
+        color: grey;
+        background-color: transparent;
+        border-color: transparent;
+    }
+
+    .btn-check:checked + .btn-secondary {
+        display: inline-block;
+        color: red;
+        background-color: transparent;
+    }
+}

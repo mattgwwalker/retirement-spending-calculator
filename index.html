@@ -10,9 +10,9 @@
       rel="stylesheet"
       integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1"
       crossorigin="anonymous">
+    <link href="rsc.css" rel="stylesheet">
     
     <title>Retirement Spending Calculator</title>
-
   </head>
 
   <body>
@@ -20,7 +20,8 @@
       <h1>Retirement Spending Calculator</h1>
       
       <p>This calculator uses a life-expectency based approach to
-        produce a long term budget for spending retirement savings.</p>
+      produce a long term budget for spending retirement
+      savings.</p>
 
       <p>It is specifically for New Zealanders born between 1876 and
       2016 and can calculate up to 95 years of age.</p>
@@ -34,7 +35,7 @@
       
       <form name="details">
         <fieldset class="row mb-3">
-          <legend class="col-form-label col-sm-2 pt-0">Sex</legend>
+          <legend class="col-form-label col-sm-2 pt-0">Sex:</legend>
 
           <div class="col-sm-10">
             <div class="form-check">
@@ -129,9 +130,9 @@
         
       </form>
 
-      <div id="results-table" class="mb-3"></div>
-      <div id="link" class="mb-3"></div>
-      <div id="qr-code" class="mb-3"></div>
+      <div id="results" class="mb-3"></div>
+      <div id="link" class="mb-3" style="break-before:page;"></div>
+      <div id="qr-code" class="mb-3" style="break-inside:avoid;"></div>
     
     </div> <!-- /container -->
 
@@ -143,9 +144,7 @@
     </script>
 
     <script src="papaparse.min.js"></script>
-
     <script src="qrcode.min.js"></script>
-    
     <script src="rsc.js"></script>
   </body>
 </html>
