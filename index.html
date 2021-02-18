@@ -20,8 +20,7 @@
       <h1>Retirement Spending Calculator</h1>
       
       <p>This calculator uses a life-expectency based approach to
-      produce a long term budget for spending retirement
-      savings.</p>
+      produce a long-term budget for spending retirement savings.</p>
 
       <p>It is specifically for New Zealanders born between 1876 and
       2016 and can calculate up to 95 years of age.</p>
@@ -33,11 +32,11 @@
       <p>Superannuation is assumed to be adjusted for inflation and
       thus stays constant in "today's dollars".</p>
       
-      <form name="details">
+      <form name="details" class="no-print">
         <fieldset class="row mb-3">
-          <legend class="col-form-label col-sm-2 pt-0">Sex:</legend>
+          <legend class="col-form-label col-sm-3 pt-0">Sex:</legend>
 
-          <div class="col-sm-10">
+          <div class="col-sm-9">
             <div class="form-check">
               <input type="radio" class="btn-check" name="sex" id="male" value="male" checked>
               <label class="btn btn-secondary" for="male">Male</label>
@@ -49,16 +48,16 @@
         </fieldset>
 
         <div class="form-group row">
-          <label for="dob" class="col-sm-2 col-form-label">Date of Birth:</label>
-          <div class="col-sm-10">
+          <label for="dob" class="col-sm-3 col-form-label">Date of Birth:</label>
+          <div class="col-sm-9">
             <input type="date" id="dob" name="dob" min="1876-01-01" max="2016-01-01">
           </div>
         </div>
       
         <fieldset class="row mb-3">
-          <legend class="col-form-label col-sm-2 pt-0">Longevity:</legend>
+          <legend class="col-form-label col-sm-3 pt-0">Longevity:</legend>
 
-          <div class="col-sm-10">
+          <div class="col-sm-9">
             <div class="form-check">
               <input type="radio" class="btn-check" name="longevity" id="median" value="median" checked>
               <label class="btn btn-secondary" for="median">Median Longevity</label>
@@ -70,10 +69,10 @@
         </fieldset>
 
         <div class="form-group row">
-          <label for="additionalLongevity" class="col-sm-2 col-form-label">
+          <label for="additionalLongevity" class="col-sm-3 col-form-label">
             Additional Years of Longevity:
           </label>
-          <div class="col-sm-10">
+          <div class="col-sm-9">
             <input type="number" id="additionalLongevity" name="additionalLongevity">
           </div>
         </div>
@@ -130,9 +129,39 @@
         
       </form>
 
-      <div id="results" class="mb-3"></div>
-      <div id="link" class="mb-3" style="break-before:page;"></div>
-      <div id="qr-code" class="mb-3" style="break-inside:avoid;"></div>
+      <div id="summary" class="mb-3 no-screen">
+        <div class="row">
+          <div class="col-sm-3">
+            <p>Sex:</p>
+          </div>
+          <div class="col-sm-9">
+            <p id="summary-sex"></p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-sm-3">
+            <p>Date of Birth:</p>
+          </div>
+          <div class="col-sm-9">
+            <p id="summary-dob"></p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-sm-3">
+            <p>Longevity:</p>
+          </div>
+          <div class="col-sm-9">
+            <p id="summary-longevity"></p>
+          </div>
+        </div>
+      </div> <!-- /summary -->
+
+      <div id="chart"></div>
+      <div id="link" class="mb-3 no-screen"></div>
+      <div id="qr-code" class="mb-3 no-screen" style="break-inside:avoid;"></div>
+      <div id="results" class="mb-3" style="break-before:page;"></div>
     
     </div> <!-- /container -->
 
@@ -145,6 +174,7 @@
 
     <script src="papaparse.min.js"></script>
     <script src="qrcode.min.js"></script>
+    <script src="d3.min.js"></script>
     <script src="rsc.js"></script>
   </body>
 </html>

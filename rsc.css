@@ -1,3 +1,9 @@
+@media screen {
+    .no-screen {
+        display: none;
+    }
+}
+
 @media print {
     p {
     }
@@ -33,4 +39,13 @@
         color: red;
         background-color: transparent;
     }
+
+    .no-print {
+        display: none
+    }
+
+    #qr-code > img {
+        height: 2.5cm;
+    }
+
 }

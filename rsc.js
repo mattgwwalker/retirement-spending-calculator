@@ -180,6 +180,96 @@ let getDateString = function(date) {
             +date.getDate().toString().padStart(2,"0"));
 }
 
+let generateChart = function(points) {
+    let width=750;
+    let height=375;
+    
+    let margin = ({top: 25*1.5, right: 30*1.5, bottom: 30*1.5, left: 40*1.5});
+    
+    let x = d3.scaleLinear()
+        .domain(d3.extent(points, p => p.x))
+        .range([margin.left, width - margin.right])
+
+    let y = d3.scaleLinear()
+        .domain([0, d3.max(points, p => p.y)]).nice()
+        .range([height - margin.bottom, margin.top])
+    
+    let xAxis = g => g
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(x).ticks(width / (80*1.5)).tickSizeOuter(0))
+        .call(g => g.append("text")
+              .attr("x", (width-margin.left-margin.right)/2+margin.left)
+              .attr("y", margin.bottom - 8)
+              .attr("fill", "currentColor")
+              .attr("text-anchor", "middle")
+              .text("Age (years)")
+             )
+
+    let yAxis = g => g
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y))
+        .call(g => g.select(".domain").remove())
+        .call(g => g.select(".tick:last-of-type text").clone()
+              .attr("x", 3)
+              .attr("text-anchor", "start")
+              .attr("font-weight", "bold")
+              .text(points.y))
+        .call(g => g.append("text")
+              .attr("x", -margin.left)
+              .attr("y", 20)
+              .attr("fill", "currentColor")
+              .attr("text-anchor", "start")
+              .text("Budget per Week ($)")
+             )
+
+    let grid = g => g
+        .attr("stroke", "currentColor")
+        .attr("stroke-opacity", 0.05)
+        .call(g => g.append("g")
+              .selectAll("line")
+              .data(x.ticks())
+              .join("line")
+              .attr("x1", d => 0.5 + x(d))
+              .attr("x2", d => 0.5 + x(d))
+              .attr("y1", margin.top)
+              .attr("y2", height - margin.bottom))
+        .call(g => g.append("g")
+              .selectAll("line")
+              .data(y.ticks())
+              .join("line")
+              .attr("y1", d => 0.5 + y(d))
+              .attr("y2", d => 0.5 + y(d))
+              .attr("x1", margin.left)
+              .attr("x2", width - margin.right));
+
+    let line = d3.line()
+        .defined(p => !isNaN(p.y))
+        .x(p => x(p.x))
+        .y(p => y(p.y))
+    
+    let svg = d3.select("#chart")
+        .append("svg")
+        .attr("viewBox", [0, 0, width, height]);
+
+    svg.append("g")
+        .call(xAxis);
+
+    svg.append("g")
+        .call(yAxis);
+
+    svg.append("g")
+        .call(grid);
+
+    svg.append("path")
+      .datum(points)
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", 1.5)
+      .attr("stroke-linejoin", "round")
+      .attr("stroke-linecap", "round")
+      .attr("d", line);
+}
+
 document.getElementById("calcRetirementSpendingPlan").onclick = function() {
     values = getValuesFromForm();
     console.log("values:", values);
@@ -271,8 +361,8 @@ document.getElementById("calcRetirementSpendingPlan").onclick = function() {
 
         // Drawdown
         drawdown += drawDownPerDay;
-        if (assets - drawdown < 0) break;
         assets -= drawDownPerDay;
+        if (assets < 0) break;
         
         // Interest
         let interestToday = assets * interestRatePerDay;
@@ -282,20 +372,47 @@ document.getElementById("calcRetirementSpendingPlan").onclick = function() {
         // Increment the date by a day
         date.setDate(date.getDate() + 1);
     }
-    
-    // Finish off the last row
-    row.interest = interest
-    row.drawdown = drawdown;
-    row.endingAssets = assets;
-    plan.push(row);
+
+    if (row !== null) {
+        // Finish off the last row
+        row.interest = interest
+        row.drawdown = drawdown;
+        row.endingAssets = assets;
+        plan.push(row);
+    }
 
     console.log("RSC.plan:", RSC.plan);
 
+    // Remove previous summary
+    let summaryDiv = document.getElementById("summary");
+    summaryDiv.textContent = "";
+
+    // Add summary
+    
+    
     // Remove previous results
     let resultsDiv = document.getElementById("results");
     resultsDiv.textContent = "";
 
     // Add results
+    let paragraph = document.createElement("p");
+    resultsDiv.appendChild(paragraph);
+    firstLine = RSC.plan[0];
+    paragraph.innerHTML = "The first line of the following table can be understood as follows: "+
+        "At <strong>"+firstLine.date+"</strong> our retiree will be <strong>"+firstLine.ageText+" old</strong>; "+
+        "they should expect to live to <strong>"+firstLine.lifeExpectancy.toFixed(1)+" years old</strong> and thus have "+
+        "an expected <strong>"+firstLine.yearsRemaining+" years remaining</strong>; they begin retirement with "+
+        "<strong>$"+firstLine.startingAssets+"</strong>; a daily draw down is calculated by dividing this amount by "+
+        "their number of years remaining plus the specified additional years of longevity and assuming there are 365.25 days "+
+        "per year; superannuation (if any was specifed) is added to the daily draw down to give a spend per week of <strong>$"+
+        firstLine.spendPerWeek.toFixed(2)+"</strong>; the "+
+        "daily draw down is accumulated for one year giving a total draw down of <strong>$"+firstLine.drawdown.toFixed(0)+
+        "</strong>; at the same time interest is calculated and paid daily on the unspent assets, the accumulated total of "+
+        "interest is <strong>$"+firstLine.interest.toFixed(0)+"</strong> (after fees, taxes, and inflation).  The starting "+
+        "assets less the draw down but plus "+
+        "interest is the value used for the starting assets of the next year.  The process is repeated until the retiree has "+
+        "negative assets or reaches 95 years old.  Each line of the table represents a year of retirement.";
+    
     let table = document.createElement("table");
     table.setAttribute("class","table");
     resultsDiv.appendChild(table);
@@ -359,6 +476,22 @@ document.getElementById("calcRetirementSpendingPlan").onclick = function() {
         "Spending Calculator.  It includes the data above so that "+
         "you do not have to re-enter it.</p>";
     new QRCode(document.getElementById("qr-code"), addr); 
+
+    // Remove the previous chart
+    document.getElementById("chart").textContent = "";
+
+    // Generate a list of points for the chart
+    let points = [];
+    RSC.plan.forEach(row => {
+        let point = {};
+        point.x = row.ageValue;
+        point.y = row.spendPerWeek;
+        points.push(point);
+    });
+    console.log(points);
+
+    // Generate chart
+    generateChart(points);
     
     return false;
 }
@@ -407,5 +540,5 @@ if (interestRate !== null) {
 }
 
 // For security, clear the data from the user's address
-window.history.replaceState(null, "", RSC.addr);
+//window.history.replaceState(null, "", RSC.addr);
 
